@@ -2,7 +2,6 @@ Flask
 Flask-Caching
 pandas
 plotly
-supabase
 scikit-learn
 python-dotenv
 gunicorn
