@@ -3,7 +3,6 @@ from flask_caching import Cache
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from supabase import create_client
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -24,17 +23,13 @@ cache = Cache(app)
 
 MAX_DATA_POINTS = 500
 
-# === БЕЗОПАСНОСТЬ: ключи из .env ===
-SUPABASE_URL = os.getenv('SUPABASE_URL', "https://wdhsqybkzpnqrfnvgiwb.supabase.co")
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', "sb_publishable_D4j5tNHVhW1gf-orm3kNwg_f-pqfxso")
-
 @cache.cached(timeout=3600, key_prefix='data')
 def load_data():
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    response = supabase.table('outbreaks').select('*').execute()
-    df = pd.DataFrame(response.data)
-    df['virus'] = 'Nipah'
+    # === ВСЕ ДАННЫЕ ВШИТЫ В КОД ===
+    # Создаём пустой DataFrame
+    df = pd.DataFrame()
     
+    # Координаты для Nipah
     coords = {
         'Ipoh': [4.6, 101.1],
         'Kampung Sungai Nipah': [4.6, 101.1],
@@ -49,11 +44,9 @@ def load_data():
         'Dhaka': [23.8, 90.4],
         'Singapore': [1.3, 103.8]
     }
-    df['latitude'] = df['location'].map(lambda x: coords.get(x, [0,0])[0])
-    df['longitude'] = df['location'].map(lambda x: coords.get(x, [0,0])[1])
-    df['social_unrest'] = (df['cfr'] * 0.6 + df['deaths'] * 0.4).clip(0, 100).round(1)
     
-    more_nipah = [
+    # === NIPAH VIRUS ===
+    nipah_data = [
         {'year': 1998, 'location': 'Ipoh', 'country': 'Malaysia', 'cases': 265, 'deaths': 105, 'cfr': 39.6},
         {'year': 1999, 'location': 'Singapore', 'country': 'Singapore', 'cases': 11, 'deaths': 1, 'cfr': 9.1},
         {'year': 2001, 'location': 'Meherpur', 'country': 'Bangladesh', 'cases': 13, 'deaths': 9, 'cfr': 69.2},
@@ -67,12 +60,13 @@ def load_data():
         {'year': 2021, 'location': 'Kozhikode', 'country': 'India', 'cases': 2, 'deaths': 2, 'cfr': 100.0},
         {'year': 2023, 'location': 'Dhaka', 'country': 'Bangladesh', 'cases': 14, 'deaths': 8, 'cfr': 57.1},
     ]
-    more_nipah_df = pd.DataFrame(more_nipah)
-    more_nipah_df['virus'] = 'Nipah'
-    more_nipah_df['latitude'] = more_nipah_df['location'].map(lambda x: coords.get(x, [0,0])[0])
-    more_nipah_df['longitude'] = more_nipah_df['location'].map(lambda x: coords.get(x, [0,0])[1])
-    more_nipah_df['social_unrest'] = (more_nipah_df['cfr'] * 0.6 + more_nipah_df['deaths'] * 0.4).clip(0, 100).round(1)
+    nipah_df = pd.DataFrame(nipah_data)
+    nipah_df['virus'] = 'Nipah'
+    nipah_df['latitude'] = nipah_df['location'].map(lambda x: coords.get(x, [0,0])[0])
+    nipah_df['longitude'] = nipah_df['location'].map(lambda x: coords.get(x, [0,0])[1])
+    nipah_df['social_unrest'] = (nipah_df['cfr'] * 0.6 + nipah_df['deaths'] * 0.4).clip(0, 100).round(1)
     
+    # === EBOLA VIRUS ===
     ebola_data = [
         {'year': 2014, 'location': 'Guinea', 'country': 'Guinea', 'cases': 3811, 'deaths': 2543, 'cfr': 66.7},
         {'year': 2014, 'location': 'Sierra Leone', 'country': 'Sierra Leone', 'cases': 14124, 'deaths': 3956, 'cfr': 28.0},
@@ -86,6 +80,7 @@ def load_data():
     ebola_df['longitude'] = [-13.5, -12.5, -9.5, 22.0, 32.4]
     ebola_df['social_unrest'] = (ebola_df['cfr'] * 0.6 + ebola_df['deaths'] * 0.4).clip(0, 100).round(1)
     
+    # === MARBURG VIRUS ===
     marburg_data = [
         {'year': 2004, 'location': 'Uige', 'country': 'Angola', 'cases': 37, 'deaths': 34, 'cfr': 91.9},
         {'year': 2005, 'location': 'Uige', 'country': 'Angola', 'cases': 252, 'deaths': 227, 'cfr': 90.1},
@@ -98,6 +93,7 @@ def load_data():
     marburg_df['longitude'] = [15.0, 15.0, 13.2, 30.4]
     marburg_df['social_unrest'] = (marburg_df['cfr'] * 0.6 + marburg_df['deaths'] * 0.4).clip(0, 100).round(1)
     
+    # === HENDRA VIRUS ===
     hendra_data = [
         {'year': 1994, 'location': 'Brisbane', 'country': 'Australia', 'cases': 20, 'deaths': 4, 'cfr': 20.0},
         {'year': 1999, 'location': 'Cairns', 'country': 'Australia', 'cases': 15, 'deaths': 2, 'cfr': 13.3},
@@ -111,6 +107,7 @@ def load_data():
     hendra_df['longitude'] = [153.0, 145.8, 146.8, 153.0, 145.8]
     hendra_df['social_unrest'] = (hendra_df['cfr'] * 0.6 + hendra_df['deaths'] * 0.4).clip(0, 100).round(1)
     
+    # === DENGUE VIRUS ===
     dengue_data = [
         {'year': 2015, 'location': 'Manila', 'country': 'Philippines', 'cases': 100000, 'deaths': 200, 'cfr': 0.2},
         {'year': 2016, 'location': 'Rio de Janeiro', 'country': 'Brazil', 'cases': 150000, 'deaths': 300, 'cfr': 0.2},
@@ -126,6 +123,7 @@ def load_data():
     dengue_df['longitude'] = [120.9, -43.2, 77.2, 90.4, 100.5, 103.8, 106.8]
     dengue_df['social_unrest'] = (dengue_df['cfr'] * 0.6 + dengue_df['deaths'] * 0.4).clip(0, 100).round(1)
     
+    # === WEST NILE VIRUS ===
     west_nile_data = [
         {'year': 2003, 'location': 'Colorado', 'country': 'USA', 'cases': 3000, 'deaths': 60, 'cfr': 2.0},
         {'year': 2012, 'location': 'Texas', 'country': 'USA', 'cases': 1900, 'deaths': 90, 'cfr': 4.7},
@@ -139,6 +137,7 @@ def load_data():
     west_nile_df['longitude'] = [-105.5, -99.0, -119.0, 21.0, 12.5]
     west_nile_df['social_unrest'] = (west_nile_df['cfr'] * 0.6 + west_nile_df['deaths'] * 0.4).clip(0, 100).round(1)
     
+    # === CHIKUNGUNYA VIRUS ===
     chikungunya_data = [
         {'year': 2005, 'location': 'La Reunion', 'country': 'France', 'cases': 250000, 'deaths': 200, 'cfr': 0.08},
         {'year': 2013, 'location': 'Haiti', 'country': 'Haiti', 'cases': 50000, 'deaths': 30, 'cfr': 0.06},
@@ -152,7 +151,8 @@ def load_data():
     chikungunya_df['longitude'] = [55.5, -72.3, -74.1, 90.4, -51.9]
     chikungunya_df['social_unrest'] = (chikungunya_df['cfr'] * 0.6 + chikungunya_df['deaths'] * 0.4).clip(0, 100).round(1)
     
-    df_all = pd.concat([df, more_nipah_df, ebola_df, marburg_df, hendra_df, dengue_df, west_nile_df, chikungunya_df], ignore_index=True)
+    # === ОБЪЕДИНЯЕМ ВСЕ ДАННЫЕ ===
+    df_all = pd.concat([nipah_df, ebola_df, marburg_df, hendra_df, dengue_df, west_nile_df, chikungunya_df], ignore_index=True)
     
     if len(df_all) > MAX_DATA_POINTS:
         df_all = df_all.sample(MAX_DATA_POINTS)
@@ -526,10 +526,9 @@ def build_charts(virus='All', year='All', country='All'):
     elapsed = round(time.time() - start_time, 2)
     
     # ============================================================
-    # VIGIL: POLAR — ЭПИЧНАЯ КАРТА ЛЕДНИКОВ И ДРЕВНИХ ВИРУСОВ
+    # VIGIL: POLAR — КАРТА ЛЕДНИКОВ И ДРЕВНИХ ВИРУСОВ
     # ============================================================
     
-    # Данные по ледникам (реальные регионы)
     glaciers = [
         {'name': 'Greenland Ice Sheet', 'lat': 72.0, 'lon': -40.0, 'loss': 280, 'risk': 95},
         {'name': 'Antarctic Ice Sheet', 'lat': -75.0, 'lon': 60.0, 'loss': 150, 'risk': 88},
@@ -540,7 +539,6 @@ def build_charts(virus='All', year='All', country='All'):
         {'name': 'Svalbard Ice Cap', 'lat': 78.0, 'lon': 20.0, 'loss': 30, 'risk': 76},
     ]
     
-    # Данные по древним вирусам (реальные находки)
     ancient_viruses = [
         {'name': 'Pithovirus sibericum', 'lat': 67.5, 'lon': 134.0, 'year': 2014, 'status': 'Revived', 'risk': 92},
         {'name': 'Mollivirus sibericum', 'lat': 68.0, 'lon': 135.0, 'year': 2015, 'status': 'Revived', 'risk': 88},
@@ -549,10 +547,8 @@ def build_charts(virus='All', year='All', country='All'):
         {'name': 'Cedratvirus', 'lat': 65.0, 'lon': 130.0, 'year': 2022, 'status': 'Identified', 'risk': 72},
     ]
     
-    # Создаём карту
     fig_polar = go.Figure()
     
-    # ЛЕДНИКИ (синие круги с размером = потерь льда)
     for g in glaciers:
         fig_polar.add_trace(go.Scattergeo(
             lon=[g['lon']],
@@ -571,7 +567,6 @@ def build_charts(virus='All', year='All', country='All'):
             showlegend=False
         ))
     
-    # ДРЕВНИЕ ВИРУСЫ (красные кресты)
     for v in ancient_viruses:
         fig_polar.add_trace(go.Scattergeo(
             lon=[v['lon']],
@@ -590,7 +585,6 @@ def build_charts(virus='All', year='All', country='All'):
             showlegend=False
         ))
     
-    # СВЯЗЬ: ЛЕДНИКИ → ВИРУСЫ (линии)
     for g in glaciers:
         for v in ancient_viruses:
             if abs(g['lat'] - v['lat']) < 15 and abs(g['lon'] - v['lon']) < 20:
@@ -977,7 +971,6 @@ HTML_TEMPLATE = """
             to { width: 100%; }
         }
         
-        /* === АНИМАЦИЯ ДЛЯ POLAR === */
         .polar-title {
             font-size: 1.8rem;
             font-weight: 700;
@@ -1226,7 +1219,6 @@ HTML_TEMPLATE = """
             window.location.href = url.toString();
         }
 
-        // === ФОНОВЫЕ ЧАСТИЦЫ ===
         const canvas = document.getElementById('particles-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -1323,7 +1315,7 @@ HTML_TEMPLATE = """
         }
 
         function sharePage() {
-            const url = "https://vigillab.pythonanywhere.com";
+            const url = "https://vigil-35oz.onrender.com";
             if (navigator.share) {
                 navigator.share({ title: 'VIGIL - Global Virus Intelligence', url: url });
             } else {
