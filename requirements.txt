@@ -2,7 +2,7 @@ Flask
 Flask-Caching
 pandas
 plotly
-supabase-py
+supabase
 numpy
 scikit-learn
 python-dotenv
